@@ -1,6 +1,6 @@
 // Static server with HTTP range support (needed for video seeking): node tools/serve.mjs [port]
 import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../web'), types = { '.html': 'text/html; charset=utf-8', '.mp4': 'video/mp4', '.m4a': 'audio/mp4' };
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../web'), types = { '.html': 'text/html; charset=utf-8', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg', '.jpg': 'image/jpeg' };
 http.createServer((q, s) => {
   const u = decodeURIComponent(new URL(q.url, 'http://x').pathname), f = path.join(root, u === '/' ? 'index.html' : path.normalize(u));
   if (!f.startsWith(root + path.sep) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { s.writeHead(404); return s.end(); }
