@@ -1,0 +1,68 @@
+{
+ "canopy": {
+  "dx": 1,
+  "dy": 1,
+  "pct": 0.2,
+  "score": 0.66
+ },
+ "canopy columns": {
+  "dx": 1,
+  "dy": 1,
+  "pct": 0.2,
+  "score": 0.56
+ },
+ "van": {
+  "dx": 2,
+  "dy": 0,
+  "pct": 0.28,
+  "score": 0.44
+ },
+ "shop front": {
+  "dx": -1,
+  "dy": 0,
+  "pct": 0.14,
+  "score": 0.72
+ },
+ "sign": {
+  "dx": 0,
+  "dy": 1,
+  "pct": 0.14,
+  "score": 0.85
+ },
+ "pumps": {
+  "dx": 3,
+  "dy": 2,
+  "pct": 0.5,
+  "score": 0.51
+ },
+ "ridge left": {
+  "dx": 5,
+  "dy": 1,
+  "pct": 0.71,
+  "score": 0.72
+ },
+ "ridge right": {
+  "dx": 5,
+  "dy": 0,
+  "pct": 0.69,
+  "score": 0.81
+ },
+ "left bush": {
+  "dx": 13,
+  "dy": -3,
+  "pct": 1.85,
+  "score": 0.16
+ },
+ "middle bush": {
+  "dx": 12,
+  "dy": -6,
+  "pct": 1.86,
+  "score": 0.11
+ },
+ "front bush": {
+  "dx": 5,
+  "dy": 3,
+  "pct": 0.81,
+  "score": 0.07
+ }
+}

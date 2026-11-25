@@ -90,7 +90,9 @@ def material(e):
     elif k == 'stones':
         L(bump(60, 8, 0.006).outputs[0], b.inputs['Normal'])
     elif k in ('vanSide', 'vanFront', 'vanRoof'):
-        b.inputs['Coat Weight'].default_value, b.inputs['Coat Roughness'].default_value = 0.6, 0.08
+        b.inputs['Coat Weight'].default_value, b.inputs['Coat Roughness'].default_value = 0.22, 0.12
+    elif k == 'vanGlass':
+        b.inputs['Alpha'].default_value, b.inputs['Roughness'].default_value, b.inputs['Coat Weight'].default_value = .45, .04, 1.0
     elif k in ('plants', 'sage'):
         b.inputs['Specular IOR Level'].default_value = 0.2
     return m
@@ -114,7 +116,7 @@ for e in json.load(open(os.path.join(D, 'meta.json'))):
     if e['uv']:
         me.uv_layers.new().data.foreach_set('uv', rd(e['name'] + '.uv').reshape(-1, 2)[ix].ravel())
     me.polygons.foreach_set('use_smooth', np.ones(len(ix) // 3, bool))
-    if e['n'] < 600000:
+    if e['n'] < 1500000:
         me.normals_split_custom_set_from_vertices(zup(rd(e['name'] + '.nor').reshape(-1, 3)).tolist())
     o = bpy.data.objects.new(e['name'], me)
     sc.collection.objects.link(o)
@@ -179,6 +181,7 @@ c, d = cp(.5, -.05), cp(.5, -.4)
 rect('#4fc8ff', 4, 5, .4, (c[0] - .3, 3.0, -(c[1] - .3)), (d[0] - 2, 0, -(d[1] - 2)))
 rect('#ffbf70', 3.2, 2.4, 1.5, (7.75, 1.55, -49.4), (6.6, .6, -46))
 rect('#8fc8ff', 3, 5, 1.2, (6.6, 2.2, -46.2), (7.9, 1.2, -49.7))
+rect('#9fe0ff', 4.2, 4, 1.6, (-7.5, 2.6, -35.5), (-2.6, .9, -41.5))  # soft fill on the van
 rect('#ff6a86', .9, 2, 2, (4.6, 1.6, -47.4), (6.4, 1.5, -50.8))
 
 TR = [v / 253 for v in (0, 17, 42, 72, 100, 126, 151, 174, 197, 217, 236, 253)]
@@ -207,6 +210,11 @@ r.engine = 'CYCLES'
 r.resolution_x, r.resolution_y, r.resolution_percentage = W, H, PCT
 cy.samples, cy.use_adaptive_sampling, cy.adaptive_threshold = SPP, True, .012
 cy.use_denoising, cy.denoiser, cy.max_bounces, cy.sample_clamp_indirect = True, 'OPENIMAGEDENOISE', 6, 8
+cy.denoising_use_gpu = True
+cy.max_bounces = int(os.environ.get('BOUNCES', '6'))
+cy.adaptive_threshold = float(os.environ.get('NOISE', '0.012'))
+cy.denoising_prefilter = os.environ.get('PREFILTER', 'ACCURATE')
+cy.caustics_reflective = cy.caustics_refractive = False
 prefs = bpy.context.preferences.addons['cycles'].preferences
 for kind in ('OPTIX', 'CUDA'):
     try:
@@ -222,6 +230,8 @@ for kind in ('OPTIX', 'CUDA'):
 sc.view_settings.view_transform, sc.view_settings.look = 'Standard', 'None'
 r.image_settings.file_format = 'PNG'
 sc.use_nodes = True
+r.compositor_device = os.environ.get('COMP', 'GPU')
+cy.use_auto_tile = False
 nt = sc.node_tree
 rl = next(q for q in nt.nodes if q.type == 'R_LAYERS') if any(q.type == 'R_LAYERS' for q in nt.nodes) else nt.nodes.new('CompositorNodeRLayers')
 cn = next((q for q in nt.nodes if q.type == 'COMPOSITE'), None) or nt.nodes.new('CompositorNodeComposite')
@@ -233,6 +243,17 @@ except Exception as ex:
     print('glare fallback', ex)
 nt.links.new(rl.outputs[0], gl.inputs[0])
 nt.links.new(gl.outputs[0], cn.inputs[0])
-r.filepath = OUT
-bpy.ops.render.render(write_still=True)
+if os.environ.get('ANIM'):  # 60 fps animation, resumable: OUT is a directory, ANIM is "first-last"
+    f0, f1 = (int(v) for v in os.environ['ANIM'].split('-'))
+    sc.frame_start, sc.frame_end, r.fps = f0, f1, 60
+    for i in range(f0, f1 + 1):
+        x = camx(i / 2)
+        co.location.x, cam.shift_x = x, -(CX + F * x / PIVOT - W / 2) / H
+        co.keyframe_insert('location', index=0, frame=i)
+        cam.keyframe_insert('shift_x', frame=i)
+    r.use_persistent_data, r.use_overwrite, r.filepath = True, False, os.path.join(OUT, 'f####')
+    bpy.ops.render.render(animation=True)
+else:
+    r.filepath = OUT
+    bpy.ops.render.render(write_still=True)
 print('DONE', OUT)

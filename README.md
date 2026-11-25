@@ -9,9 +9,15 @@ A code-only reconstruction of an 11 second dusk gas-station shot. No image, vide
 | 1 | three.js real-time PBR | `src/realtime.js` | about 6 s including scene build |
 | 2 | GPU path tracing (three-gpu-pathtracer) | `src/pathtrace.js` | 283 s, 1200 samples |
 | 3 | One GLSL fragment shader | `src/scene.frag.glsl` | 0.7 s |
-| 4 | Blender Cycles driven by Python | `src/blender_scene.py` | 23 s, up to 768 samples |
+| 4 | Blender Cycles driven by Python | `src/blender_scene.py` | 2.7 s, 64 samples, GPU denoise |
 
-Times measured on an RTX 2080 Ti at 1080x1920 (method 1 at 1440x2560). Methods 1, 2 and 4 share one procedural geometry generator (`src/scene.js`); method 3 is independent. Status: stills only, the animation follows once a method is chosen.
+Times measured on an RTX 2080 Ti at 1080x1920 (method 1 at 1440x2560). Methods 1, 2 and 4 share one procedural geometry generator (`src/scene.js`); method 3 is independent. Stills 1 to 3 show the first version of the scene; after Blender was chosen, the shared scene was refined and only method 4 was re-rendered.
+
+## Final animation (method 4)
+
+`out/desert-gas.mp4`: 1080x1920, 60 fps, 660 frames, 64 samples with OptiX and GPU denoising (about 2.7 s per frame), with an original soundtrack synthesised by `tools/music.py`. `web/` is a small page with a camera slider; run `node tools/serve.mjs` and open http://localhost:8123.
+
+Measured on frame 150 against the private reference: mean zone colour error 5.8 dE (single zones up to 12.7), rigid objects placed within 0.14 to 0.71 % of the frame width. Plants are procedural and do not match blade by blade.
 
 ## Reference
 
@@ -25,7 +31,9 @@ node tools/shot.mjs realtime out/1_realtime.png 150 2
 SPP=1200 node tools/shot.mjs pathtrace out/2_pathtrace.png 150 1.5 590
 ANGLE=gl node tools/shot.mjs shader out/3_shader.png 150 1.5
 mkdir -p out/raw/mesh && node tools/shot.mjs exportmesh out/raw/mesh
-blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh out/4_blender.png 150 768 150
+blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh out/still.png 150 256 150
+BOUNCES=4 ANIM=0-659 blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh <frames dir> 150 64 150
+python tools/music.py out/raw/music.wav && FRAMES=<frames dir> sh tools/finish.sh
 ```
 
 `tools/shot.mjs` expects Chrome at its default Windows path. Blender 4.5 LTS was used.

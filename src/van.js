@@ -8,12 +8,12 @@ export const VO = [-2.81, 40.6], VR = [2.63, 2.62], VW = [-1.78, 0.32], VH = 1.9
 export const P = (l, w, y) => [VO[0] + l * VR[0] + w * VW[0], y, -(VO[1] + l * VR[1] + w * VW[1])];
 const PROF = [[0.012, 0.36], [0, 0.55], [0, 0.98], [0.012, 1.12], [0.035, 1.22], [0.145, 1.8], [0.185, 1.91], [0.25, 1.96], [0.5, VH], [0.82, 1.965], [0.9, 1.93], [0.935, 1.85], [0.98, 1.3], [0.995, 1.1], [1, 0.6], [0.992, 0.36]];
 const inset = (y) => 0.012 + 0.07 * smooth(1.1, 1.95, y) + 0.05 * smooth(1.82, 1.98, y) + 0.02 * smooth(0.6, 0.36, y);
-const BLUE = '#3cc4e8', DARK = '#0c0d16';
+const BLUE = '#46d0ee', DARK = '#0c0d16';
 
 function frontArt(x, w, h) {
   const Y = (m) => h - (m / 2) * h; x.fillStyle = BLUE; x.fillRect(0, 0, w, h); x.fillStyle = '#c79a3c'; x.fillRect(0, Y(1.2), w, Y(0.93) - Y(1.2)); x.fillStyle = '#e0b860'; x.fillRect(0, Y(1.2), w, 10);
   x.fillStyle = '#0a0a12'; x.beginPath(); x.roundRect(w * 0.06, Y(1.85), w * 0.88, Y(1.23) - Y(1.85), 34); x.fill();
-  const g = x.createLinearGradient(0, Y(1.85), 0, Y(1.22)); g.addColorStop(0, '#15142a'); g.addColorStop(0.55, '#3b2a52'); g.addColorStop(1, '#1a1428'); x.fillStyle = g; x.beginPath(); x.roundRect(w * 0.085, Y(1.82), w * 0.83, Y(1.26) - Y(1.82), 26); x.fill();
+  const g = x.createLinearGradient(0, Y(1.85), 0, Y(1.22)); g.addColorStop(0, '#15142a'); g.addColorStop(0.55, '#5a3f6c'); g.addColorStop(1, '#1a1428'); x.fillStyle = g; x.beginPath(); x.roundRect(w * 0.085, Y(1.82), w * 0.83, Y(1.26) - Y(1.82), 26); x.fill();
   x.fillStyle = 'rgba(190,120,190,.38)'; x.beginPath(); x.moveTo(w * 0.14, Y(1.3)); x.lineTo(w * 0.24, Y(1.78)); x.lineTo(w * 0.55, Y(1.78)); x.lineTo(w * 0.5, Y(1.3)); x.fill();
   x.strokeStyle = '#08080e'; x.lineWidth = 7; x.beginPath(); x.moveTo(w * 0.2, Y(1.24)); x.lineTo(w * 0.5, Y(1.29)); x.moveTo(w * 0.52, Y(1.24)); x.lineTo(w * 0.85, Y(1.29)); x.stroke();
   x.fillStyle = DARK; x.fillRect(w * 0.03, Y(1.06), w * 0.94, Y(0.84) - Y(1.06)); x.strokeStyle = '#2a2a38'; x.lineWidth = 3; for (let i = 0; i < 6; i++) { x.beginPath(); x.moveTo(w * 0.16, Y(1.04 - i * 0.035)); x.lineTo(w * 0.84, Y(1.04 - i * 0.035)); x.stroke(); }
@@ -26,7 +26,7 @@ function sideArt(x, w, h) {
   const pt = [[0.96, 0.82], [0.93, 0.9], [0.86, 0.88], [0.8, 0.92], [0.74, 0.8], [0.69, 0.66], [0.6, 0.55], [0.5, 0.53], [0.43, 0.6], [0.39, 0.78], [0.33, 0.86], [0.24, 0.83], [0.14, 0.9], [0.06, 0.86], [0, 0.88]];
   pt.forEach((q, i) => { const p = i ? pt[i - 1] : [1, 0.9]; x.quadraticCurveTo(X(p[0]), Y(p[1]), X((q[0] + p[0]) / 2), Y((q[1] + p[1]) / 2)); }); x.lineTo(0, Y(0.88)); x.closePath(); x.fill();
   x.fillStyle = '#8a6a24'; for (const m of [1.15, 1.08, 1.02]) x.fillRect(X(0.36), Y(m), X(0.62), 7); x.fillStyle = 'rgba(255,220,140,.5)'; x.fillRect(0, Y(1.245), w, 8);
-  x.fillStyle = '#0b0b14'; x.beginPath(); x.moveTo(X(0.075), Y(1.27)); x.lineTo(X(0.175), Y(1.78)); x.lineTo(X(0.33), Y(1.78)); x.lineTo(X(0.335), Y(1.27)); x.closePath(); x.fill();
+  x.fillStyle = '#1a1226'; x.beginPath(); x.moveTo(X(0.075), Y(1.27)); x.lineTo(X(0.175), Y(1.78)); x.lineTo(X(0.33), Y(1.78)); x.lineTo(X(0.335), Y(1.27)); x.closePath(); x.fill();
   x.fillStyle = '#5a2c30'; x.beginPath(); x.arc(X(0.27), Y(1.4), 48, 0, 7); x.fill(); x.strokeStyle = '#2a7fa8'; x.lineWidth = 12; x.beginPath(); x.moveTo(X(0.165), Y(1.78)); x.lineTo(X(0.155), Y(1.27)); x.stroke();
   x.fillStyle = '#0b0b16'; x.beginPath(); x.moveTo(X(0.87), Y(1.76)); x.lineTo(X(0.925), Y(1.74)); x.lineTo(X(0.955), Y(1.32)); x.lineTo(X(0.9), Y(1.32)); x.closePath(); x.fill();
   // abstract painted panel (original artwork, no lettering)
@@ -60,12 +60,23 @@ export function buildVan(add) {
   add('bumper', mergeGeometries([...bar(-0.05, 0.015, 0.4, 0.54, -0.03, 1.03), ...bar(0.985, 1.03, 0.4, 0.52, -0.03, 1)]), std({ color: C('#1a1820'), roughness: 0.35, metalness: 0.3, side: DS }));
   add('bumperTrim', quad([P(-0.053, 1.02, 0.53), P(-0.053, -0.02, 0.53), P(-0.053, -0.02, 0.5), P(-0.053, 1.02, 0.5)]), std({ color: C('#8a7c86'), metalness: 0.7, roughness: 0.3, side: DS }));
   const hl = [];
-  for (const w of [0.125, 0.885]) { const q = [], f = (t) => P(-0.016, w + Math.cos(t) * 0.062, 0.95 + Math.sin(t) * 0.105); for (let i = 0; i < 24; i++) q.push(...P(-0.018, w, 0.95), ...f((i / 24) * 6.283), ...f(((i + 1) / 24) * 6.283)); hl.push(tris(q)); }
-  const hm = glow('#ffe2a8', 1.35); hm.side = DS; add('headlights', mergeGeometries(hl), hm);
+  for (const w of [0.125, 0.885]) { const q = [], f = (t) => P(-0.016, w + Math.cos(t) * 0.05, 0.95 + Math.sin(t) * 0.085); for (let i = 0; i < 24; i++) q.push(...P(-0.018, w, 0.95), ...f((i / 24) * 6.283), ...f(((i + 1) / 24) * 6.283)); hl.push(tris(q)); }
+  const hm = glow('#ffd9a0', 0.95); hm.side = DS; add('headlights', mergeGeometries(hl), hm);
   const tyre = [], rim = [], hub = [];
   const ring = (arr, l, w, r0, r1, o0, o1) => { const q = [], f = (t, r, o) => P(l + (Math.cos(t) * r) / 3.7, w + o, 0.31 + Math.sin(t) * r); for (let i = 0; i < 36; i++) { const a = (i / 36) * 6.2832, b = ((i + 1) / 36) * 6.2832; q.push(...f(a, r0, o0), ...f(a, r1, o1), ...f(b, r1, o1), ...f(a, r0, o0), ...f(b, r1, o1), ...f(b, r0, o0)); } arr.push(tris(q)); };
   for (const l of [0.112, 0.765]) for (const w of [0, 0.9]) { ring(tyre, l, w, 0.31, 0.31, 0.13, -0.012); ring(tyre, l, w, 0.31, 0.205, -0.012, -0.02); ring(rim, l, w, 0.205, 0.185, -0.021, -0.022); ring(hub, l, w, 0.185, 0.13, -0.018, 0.005); ring(rim, l, w, 0.13, 0, 0, -0.016); ring(tyre, l, w, 0.31, 0, 0.1, 0.1); }
   add('tyres', mergeGeometries(tyre), std({ color: C('#0c0b10'), roughness: 0.9, side: DS })); add('rims', mergeGeometries(rim), std({ color: C('#d8c4bc'), roughness: 0.3, metalness: 0.6, side: DS })); add('hubs', mergeGeometries(hub), std({ color: C('#6a4a48'), roughness: 0.4, metalness: 0.4, side: DS }));
+  // glass: thin reflective panes just outside the painted openings
+  const sx = (l, y, o = 0.006) => P(l, inset(y) - o, y), glassS = [quad([sx(0.185, 1.76), sx(0.326, 1.76), sx(0.331, 1.285), sx(0.165, 1.285)]), quad([sx(0.15, 1.72), sx(0.162, 1.76), sx(0.15, 1.285), sx(0.085, 1.285)]), quad([sx(0.872, 1.75), sx(0.922, 1.73), sx(0.95, 1.33), sx(0.902, 1.33)])];
+  const fl = (y) => { for (let i = 1; i < n; i++) if (sp[i][1] >= y) { const t = (y - sp[i - 1][1]) / (sp[i][1] - sp[i - 1][1]); return mix(sp[i - 1][0], sp[i][0], t); } return 0; }, fx = (w, y) => { const s = inset(y); return P(fl(y) - 0.005 + Math.pow(2 * w - 1, 2) * 0.012, mix(s, 1 - s, w), y); };
+  const wind = []; for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) { const a = 0.07 + (0.86 * i) / 8, b = 0.07 + (0.86 * (i + 1)) / 8, y0 = 1.27 + (0.53 * j) / 4, y1 = 1.27 + (0.53 * (j + 1)) / 4; wind.push(quad([fx(b, y1), fx(a, y1), fx(a, y0), fx(b, y0)])); }
+  add('vanGlass', mergeGeometries([...glassS, ...wind]), std({ color: C('#14121e'), roughness: 0.06, metalness: 0.0, side: DS, transparent: true, opacity: 0.6 }));
+  const trim = []; for (const y of [1.255, 0.5]) trim.push(tube(sx(0.02, y, 0.008), sx(0.985, y, 0.008), 0.011, 6)); trim.push(tube(P(0.2, 0.03, 1.915), P(0.92, 0.03, 1.9), 0.014, 6)); // belt, sill and rain gutter
+  for (const [a, b] of [[[0.18, 1.775], [0.33, 1.775]], [[0.33, 1.775], [0.335, 1.272]], [[0.16, 1.272], [0.335, 1.272]], [[0.172, 1.775], [0.15, 1.272]]]) trim.push(tube(sx(...a, 0.008), sx(...b, 0.008), 0.012, 6));
+  add('vanTrim', mergeGeometries(trim), std({ color: C('#1c3a4c'), roughness: 0.35, metalness: 0.3 }));
+  const arch = []; for (const l of [0.112, 0.765]) for (let i = 0; i < 18; i++) { const f = (t) => P(l + (Math.cos(t) * 0.385) / 3.7, -0.004, 0.33 + Math.sin(t) * 0.4); arch.push(tube(f((i / 18) * Math.PI), f(((i + 1) / 18) * Math.PI), 0.014, 6)); }
+  add('vanArch', mergeGeometries(arch), std({ color: C('#3cb4d8'), roughness: 0.3 }));
+  const wip = [tube(fx(0.25, 1.25), fx(0.5, 1.4), 0.008, 5), tube(fx(0.55, 1.25), fx(0.8, 1.4), 0.008, 5), tube(P(0.31, -0.012, 1.1), P(0.345, -0.012, 1.1), 0.016, 6)]; add('vanBits', mergeGeometries(wip), std({ color: C('#0a0a10'), roughness: 0.4 }));
   add('rack', mergeGeometries([tube(P(0.45, 0.16, 2.0), P(0.85, 0.16, 1.99), 0.018), tube(P(0.45, 0.8, 2.0), P(0.85, 0.8, 1.99), 0.018)]), std({ color: C('#33303c') }));
   add('mirror', box(0.12, 0.16, 0.06, ...P(0.1, -0.06, 1.3)), std({ color: C('#121018') }));
 }

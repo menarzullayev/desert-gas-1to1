@@ -12,3 +12,6 @@
 10. Ish tartibi: to'xtovsiz.
 
 Blender usuli JS generatori yaratgan geometriyani o'qiydi, material, nur, kamera va render Python'da.
+
+11. G'olib: Blender Cycles.
+12. Yakuniy render: 64 namuna, 4 sakrash, GPU denoise (256 namunaga nisbatan PSNR 42,4 dB).

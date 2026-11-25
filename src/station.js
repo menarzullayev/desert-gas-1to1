@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { F, CX, CAMH, rng, unproj, wall } from './util.js';
+import { F, CX, CAMH, rng, unproj, wall, mix } from './util.js';
 import { C, std, glow, pane, canvasTex, quad, tube, box, prism, cyl } from './kit.js';
 
 // Canopy parallelogram on the ground plane: corner + two edges [X, depth].
@@ -10,11 +10,11 @@ export const BA = [9.41, 47.9], BB = [5.78, 51.5], BD = [13.2, 51.8], BTOP = 2.9
 
 export function buildStation(add) {
   const yT = CAN_T, yB = CAN_B, at = (px, d) => ((px - CX) * d) / F, pc = (px, d, r, y0, y1) => cyl(at(px, d), d, r, y0, y1);
-  add('fascia', prism([cp(0, 0), cp(0, 1), cp(1, 1), cp(1, 0)], yB, yT), std({ color: C('#12a0c8'), roughness: 0.45, emissive: C('#08a0d0'), emissiveIntensity: 0.75 }));
-  add('soffit', prism([cp(0.02, 0.02), cp(0.02, 0.98), cp(0.98, 0.98), cp(0.98, 0.02)], yB - 0.015, yB + 0.01), std({ color: C('#d8c0b0') }));
+  add('fascia', prism([cp(0, 0), cp(0, 1), cp(1, 1), cp(1, 0)], yB, yT), std({ color: C('#12a0c8'), roughness: 0.45, emissive: C('#12aed6'), emissiveIntensity: 0.72 }));
+  add('soffit', prism([cp(0.02, 0.02), cp(0.02, 0.98), cp(0.98, 0.98), cp(0.98, 0.02)], yB - 0.015, yB + 0.01), std({ color: C('#d8b8a4') }));
   const neon = [], o = -0.012;
   for (const y of [yT - 0.1, yB + 0.17, yB + 0.05]) { const p = (t, u) => { const q = cp(t, u); return [q[0], y, -q[1]]; }; neon.push(tube(p(o, 1), p(o, o), 0.03), tube(p(o, o), p(1, o), 0.03)); }
-  add('neonCanopy', mergeGeometries(neon), glow('#6fe6ff', 1.25));
+  add('neonCanopy', mergeGeometries(neon), glow('#8fecff', 1.3));
   const lamps = [];
   for (const [t, u, L, dir] of [[0.72, 0.1, 1.3, 0], [0.3, 0.12, 1.0, 0], [0.1, 0.35, 0.8, 1], [0.1, 0.72, 1.2, 1], [0.6, 0.55, 1.0, 0], [0.4, 0.8, 1, 1], [0.5, 0.3, 0.7, 1]]) { const c = cp(t, u), e = dir ? E2 : E1, k = L / 2 / Math.hypot(...e); lamps.push(tube([c[0] - e[0] * k, yB - 0.05, -(c[1] - e[1] * k)], [c[0] + e[0] * k, yB - 0.05, -(c[1] + e[1] * k)], 0.045)); }
   add('lamps', mergeGeometries(lamps), glow('#ffd6a0', 2.2));
@@ -45,13 +45,13 @@ export function buildStation(add) {
   const fq = (p, x0, y0, x1, y1, off) => quad([p(x0, y0, off), p(x1, y0, off), p(x1, y1, off), p(x0, y1, off)]);
   add('bodyBlue', prism([A, D2, [9.57, 55.4], B], 0, BTOP - 0.02), std({ color: C('#4a9ad8'), roughness: 0.6 }));
   add('roof', prism([[A[0] + 0.02, A[1] - 0.09], [D2[0] + 0.1, D2[1]], [9.57, 55.5], [B[0] - 0.1, B[1] + 0.02]], BTOP - 0.22, BTOP), std({ color: C('#2a6fc0'), roughness: 0.5 }));
-  const pinkTex = canvasTex(512, 512, (x) => { x.fillStyle = '#f0708e'; x.fillRect(0, 0, 512, 512); for (let i = 0; i < 12; i++) { x.fillStyle = 'rgba(90,20,60,.35)'; x.fillRect(i * 43, 0, 4, 512); x.fillStyle = 'rgba(255,190,200,.22)'; x.fillRect(i * 43 + 5, 0, 4, 512); } });
+  const pinkTex = canvasTex(512, 512, (x) => { x.fillStyle = '#e8747c'; x.fillRect(0, 0, 512, 512); for (let i = 0; i < 12; i++) { x.fillStyle = 'rgba(90,20,60,.35)'; x.fillRect(i * 43, 0, 4, 512); x.fillStyle = 'rgba(255,190,200,.22)'; x.fillRect(i * 43 + 5, 0, 4, 512); } });
   const pink = std({ map: pinkTex, roughness: 0.65, side: THREE.DoubleSide });
   add('pinkWall', fq(fw, 553.5, 692, 592.5, 789, 0.03), pink); add('pinkBand', fq(fw, 553.5, 695, 697.5, 708.5, 0.035), pink); add('pinkBand2', fq(rw, 698, 694, 760, 708, 0.035), pink);
   add('seam', fq(fw, 553.5, 708.3, 592.5, 709.2, 0.04), std({ color: C('#8a3a5c') })); add('notes', mergeGeometries([fq(fw, 569, 723.5, 575, 726, 0.045), fq(fw, 583, 731, 588, 753, 0.04)]), std({ color: C('#a84468') }));
   const trim = std({ color: C('#2b5f96'), roughness: 0.5 });
   const shop = (seed, door) => canvasTex(512, 420, (x, w, h) => {
-    const r = rng(seed), g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ffcb50'); g.addColorStop(0.5, '#ffd870'); g.addColorStop(1, '#f3b64e'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    const r = rng(seed), g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ffc838'); g.addColorStop(0.5, '#ffdc68'); g.addColorStop(1, '#f3b64e'); x.fillStyle = g; x.fillRect(0, 0, w, h);
     x.fillStyle = '#fff3c0'; x.fillRect(w * 0.12, 22, w * 0.3, 12); x.fillRect(w * 0.6, 34, w * 0.26, 10);
     const shelf = (X, Y, S, T) => { x.fillStyle = '#6b3c30'; x.fillRect(X, Y, S, T); for (let j = 0; j < 4; j++) { x.fillStyle = '#e7b765'; x.fillRect(X + 8, Y + 8 + (j * T) / 4, S - 16, T / 4 - 14); let q = X + 10; while (q < X + S - 18) { const ww = 8 + r() * 14, hh = (T / 4) * (0.35 + r() * 0.35); x.fillStyle = ['#8a2f2c', '#3d2a3a', '#c25a34', '#5a4a68', '#b8863a', '#2f4660'][(r() * 6) | 0]; x.fillRect(q, Y + ((j + 1) * T) / 4 - 8 - hh, ww, hh); q += ww + 3; } } };
     if (door) { x.fillStyle = '#c98b3c'; x.fillRect(120, 250, 300, 170); x.fillStyle = '#7a4632'; x.fillRect(260, 180, 170, 110); } else {
@@ -70,6 +70,15 @@ export function buildStation(add) {
   add('bollards', mergeGeometries([pc(632, 47.8, 0.07, 0, 0.72), pc(680.5, 46.6, 0.075, 0, 0.72), pc(709, 46.2, 0.08, 0, 0.6), pc(713, 45.9, 0.11, 0, 0.25)]), std({ color: C('#d89a28') }));
   add('trash', mergeGeometries([pc(607.5, 48.6, 0.13, 0, 0.5), pc(607.5, 48.6, 0.15, 0.48, 0.56)]), std({ color: C('#6a3a30') }));
   add('antenna', mergeGeometries([pc(616.5, 53, 0.035, 2.8, 4.35), pc(625.6, 53, 0.06, 2.8, 4.65), pc(622.5, 53.2, 0.02, 2.8, 3.9), box(0.36, 0.12, 0.12, at(630, 53), 3.0, -53)]), std({ color: C('#2c1c3a') }));
+
+  // ---- small detail ----
+  const hose = []; for (const [px, d] of [[401, 44.9], [455, 43.2], [513.5, 45]]) { const X = at(px, d), c = new THREE.CatmullRomCurve3([[0.2, 1.25, 0.28], [0.36, 0.9, 0.36], [0.33, 0.35, 0.36], [0.22, 0.28, 0.32], [0.16, 0.7, 0.28]].map(([a, b, z]) => new THREE.Vector3(X + a, b, -d + z))); hose.push(new THREE.TubeGeometry(c, 24, 0.016, 6)); }
+  add('hoses', mergeGeometries(hose), std({ color: C('#0c0a10'), roughness: 0.5 }));
+  const wire = []; for (const [y0, y1, d] of [[703, 706, 180], [707, 709, 180], [722, 727, 110]]) for (let i = 0; i < 12; i++) { const p = (t) => unproj(-120 + 860 * t, mix(y0, y1, t) + Math.sin(t * Math.PI * 4) ** 2 * 1.6, d); wire.push(tube(p(i / 12), p((i + 1) / 12), 0.016, 5)); }
+  add('wires', mergeGeometries(wire), std({ color: C('#3a2044') }));
+  add('polefar2', mergeGeometries([pc(422, 180, 0.1, 0, 4.4), pc(-90, 180, 0.1, 0, 4.2)]), std({ color: C('#3a2040') }));
+  add('gutter', mergeGeometries([tube(fw(553.5, 694.5, 0.06), fw(697.5, 686.8, 0.1), 0.03), tube(fw(594, 790, 0.02), fw(594, 709, 0.02), 0.02)]), std({ color: C('#2a6fc0') }));
+  add('canPosts', mergeGeometries([pc(713, 45.9, 0.05, 0.2, 0.5)]), std({ color: C('#b87820') }));
 
   // ---- sign ----
   const Sd = 50, sp = (x, y, f = 0) => unproj(x, y, Sd - f), board = (p, f) => quad(p.map((q) => sp(...q, f)));
