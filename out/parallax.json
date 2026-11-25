@@ -1,0 +1,52 @@
+{
+ "mountain ridge": {
+  "reference": [
+   -28,
+   0.99
+  ],
+  "ours": [
+   -28,
+   1.0
+  ]
+ },
+ "van": {
+  "reference": [
+   0,
+   0.91
+  ],
+  "ours": [
+   1,
+   0.96
+  ]
+ },
+ "canopy": {
+  "reference": [
+   -3,
+   0.99
+  ],
+  "ours": [
+   -1,
+   0.99
+  ]
+ },
+ "left bush": {
+  "reference": [
+   37,
+   0.7
+  ],
+  "ours": [
+   38,
+   0.78
+  ]
+ },
+ "middle bush": {
+  "reference": [
+   111,
+   0.66
+  ],
+  "ours": [
+   111,
+   0.6
+  ]
+ }
+}

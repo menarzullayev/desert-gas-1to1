@@ -1,0 +1,22 @@
+{
+  "name": "desert-gas-1to1",
+  "version": "1.0.0",
+  "description": "Code-only reconstruction of a dusk gas-station shot, rendered four ways",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^25.18.1",
+    "three": "^0.187.0",
+    "three-gpu-pathtracer": "^0.0.28",
+    "three-mesh-bvh": "^0.10.0"
+  },
+  "private": true
+}
