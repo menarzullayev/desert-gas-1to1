@@ -8,7 +8,7 @@ export function groundH(x, d) {
   return (fbm(x * 0.5, d * 0.5, 3) - 0.5) * 0.05 * smooth(34, 20, d) + (fbm(x * 3.1, d * 3.1, 4, 0.6) - 0.5) * 0.065 * rough
     + (fbm(x * 17, d * 17, 3, 0.6) - 0.5) * 0.04 * smooth(18, 8, d) + (fbm(x * 0.06, d * 0.06, 3) - 0.5) * 0.6 * far - 0.01;
 }
-const HAZE = hl('#c07090'), TINT = [1.6, 1.24, 1.54];
+const HAZE = hl('#b0647c'), TINT = [1.6, 1.24, 1.54];
 const LOTL = hl('#a98a80'), DIRT = hl('#94746a'), DARK = hl('#5c4640'), APRON = hl('#b9a69a'), FAR0 = hl('#6a4a4c'), FAR1 = hl('#a07870');
 function groundCol(x, d) {
   const n = fbm(x * 1.7, d * 1.7, 4), m = fbm(x * 9, d * 9, 3), s = fbm(x * 0.22 + d * 0.02, d * 1.5, 4);
@@ -129,7 +129,7 @@ export function buildPlants() {
   grass(o, 367, 868, 0.36, 0.1, 51, 120, '#7a3a2a', '#c0603a', 0.005);
   const s = buf(), r = rng(99);
   const clump = (x, d, w, h, tone, n) => { const y0 = groundH(x, d); for (let i = 0; i < n; i++) { const t = r() * 6.283, u = r(), rr = Math.sqrt(1 - u * u) * (0.75 + r() * 0.3), sh = (0.35 + 0.8 * u) * (0.7 + r() * 0.6); leaf(s, [x + Math.cos(t) * rr * w, y0 + u * h * (0.8 + r() * 0.3), -(d + Math.sin(t) * rr * w)], w * 0.1, r, tone.map((v) => v * sh)); } };
-  const tones = ['#a87c74', '#bc8478', '#866664', '#cc8a78', '#745a5c'].map(hl).map((c) => c.map((v) => v * 1.7));
+  const tones = ['#a87c74', '#bc8478', '#866664', '#cc8a78', '#745a5c'].map(hl).map((c) => c.map((v) => v * 2.1));
   for (let i = 0; i < 6500; i++) {
     const d = Math.sqrt(58 * 58 + r() * (430 * 430 - 58 * 58)), x = (r() * 2 - 1) * 0.38 * d; // uniform on the ground plane
     if (d < 56 + 6 * vnoise(x * 0.3, 2) || fbm(x * 0.08, d * 0.05, 3) < 0.47) continue;
@@ -140,28 +140,55 @@ export function buildPlants() {
 }
 const RIDGE1 = [[-300, 600], [-200, 590], [-100, 596], [-40, 588], [0, 584], [40, 589], [85, 599], [130, 600], [170, 592], [210, 589], [260, 598], [340, 607], [390, 590], [430, 580], [470, 572], [500, 575], [545, 570], [575, 576], [620, 560], [665, 550], [700, 554], [760, 560], [860, 548], [1000, 580]];
 const RIDGE2 = [[-300, 660], [-120, 640], [0, 647], [40, 644], [90, 655], [130, 671], [165, 664], [215, 648], [262, 645], [320, 656], [360, 676], [420, 688], [520, 684], [600, 676], [720, 668], [1000, 672]];
+// Heightfield in pixel units carved by a deterministic droplet erosion pass.
+function erode(h, W2, H2, seed, drops) {
+  const r = rng(seed), at = (x, y) => { const i = x | 0, j = y | 0, u = x - i, v = y - j, k = j * W2 + i; return [h[k] * (1 - u) * (1 - v) + h[k + 1] * u * (1 - v) + h[k + W2] * (1 - u) * v + h[k + W2 + 1] * u * v, (h[k + 1] - h[k]) * (1 - v) + (h[k + W2 + 1] - h[k + W2]) * v, (h[k + W2] - h[k]) * (1 - u) + (h[k + W2 + 1] - h[k + 1]) * u]; };
+  const put = (x, y, a) => { const i = x | 0, j = y | 0, u = x - i, v = y - j, k = j * W2 + i; h[k] += a * (1 - u) * (1 - v); h[k + 1] += a * u * (1 - v); h[k + W2] += a * (1 - u) * v; h[k + W2 + 1] += a * u * v; };
+  for (let n = 0; n < drops; n++) {
+    let x = 1 + r() * (W2 - 3), y = 1 + r() * (H2 - 3), dx = 0, dy = 0, vel = 1, wat = 1, sed = 0;
+    for (let t = 0; t < 70; t++) {
+      const [z, gx, gy] = at(x, y); dx = dx * 0.25 - gx * 0.75; dy = dy * 0.25 - gy * 0.75; const l = Math.hypot(dx, dy); if (l < 1e-5) break; dx /= l; dy /= l;
+      const nx = x + dx, ny = y + dy; if (nx < 1 || ny < 1 || nx > W2 - 3 || ny > H2 - 3) break;
+      const dz = at(nx, ny)[0] - z, cap = Math.max(-dz, 0.012) * vel * wat * 4.5;
+      if (dz > 0 || sed > cap) { const a = dz > 0 ? Math.min(dz, sed) : (sed - cap) * 0.25; sed -= a; put(x, y, a); } else { const a = Math.min((cap - sed) * 0.22, -dz); sed += a; put(x, y, -a); }
+      vel = Math.sqrt(Math.max(0.01, vel * vel - dz * 1.2)); wat *= 0.985; x = nx; y = ny;
+    }
+  }
+}
+const PLAIN = [[684, '#673770'], [693, '#6c3870'], [700, '#773b6f'], [707, '#7d3d6d'], [714, '#7b3b68'], [724, '#72365f'], [740, '#6d3558']].map(([y, c]) => [y, hex(c)]);
 export function buildMountains() {
-  const layers = [{ ridge: RIDGE1, base: 736, z0: 2600, z1: 4600, seed: 5, lit: '#8e4b7c', mid: '#693b7c', sh: '#472b72', rows: 300, amp: 30, haze: 0.22 }, { ridge: RIDGE2, base: 738, z0: 1500, z1: 2200, seed: 23, lit: '#744072', mid: '#583070', sh: '#402464', rows: 200, amp: 17, haze: 0 }];
+  const layers = [{ ridge: RIDGE1, base: 700, z0: 2600, z1: 4600, seed: 5, lit: '#98527c', mid: '#673a7b', sh: '#43286c', rows: 320, depth: 330, amp: 46, freq: 0.0125, drops: 190000, dark: [0.0, 0.14] },
+    { ridge: RIDGE2, base: 704, z0: 1500, z1: 2200, seed: 23, lit: '#7f4575', mid: '#5e3573', sh: '#432768', rows: 200, depth: 190, amp: 20, freq: 0.02, drops: 90000, dark: [0, 0.04] }];
   return layers.map((L) => {
-    const cols = 1100, rows = L.rows, hg = [], pos = [], col = [], idx = [];
+    const cols = 1300, rows = L.rows, W2 = cols + 1, H2 = rows + 1, h = new Float64Array(W2 * H2), X = (c) => -300 + (c / cols) * 1300, D = (r) => (r / rows) * L.depth;
+    const top = Array.from({ length: W2 }, (_, c) => L.base - (ramp(L.ridge, X(c)) + (fbm(X(c) * 0.05 + L.seed, 2, 5) - 0.5) * 9));
     for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++) {
-      const px = -300 + (c / cols) * 1300, v = r / rows, top = ramp(L.ridge, px) + (fbm(px * 0.05 + L.seed, 2, 5) - 0.5) * 9;
-      const wx = (fbm(px * 0.011 + L.seed, v * 3.2, 4) - 0.5) * 150, down = (1 - v) * 46 * (vnoise(px * 0.006 + L.seed, 4) - 0.35);
-      const big = ridged((px + wx + down) * 0.0135 + L.seed, v * 2.1 + L.seed, 5), fine = ridged((px + wx * 1.1 + down * 1.6) * 0.04 + L.seed, v * 5.5 + 7, 4);
-      const gully = big * 0.7 + fine * 0.3, prof = v < 0.25 ? v * 1.12 : 0.28 + (v - 0.25) * 0.96, bump = (gully - 0.62) * L.amp * smooth(0.2, 0.42, v) * (1 - smooth(0.86, 1, v));
-      const py = mix(L.base, top, prof) - bump * 0.45; hg.push([px, py, v, gully]); pos.push(...unproj(px, py, mix(L.z0, L.z1, v) - bump * 14));
+      const x = X(c), d = D(r), v = r / rows, e = Math.pow(v, 1.12), w = (fbm(x * 0.02 + L.seed, d * 0.02, 3) - 0.5) * 34;
+      const spur = ridged((x + w + d * 0.28) * L.freq + L.seed, (d + w) * L.freq * 0.62 + L.seed, 5) - 0.62, fine = fbm(x * 0.09 + 3, d * 0.09 + L.seed, 4) - 0.5;
+      h[r * W2 + c] = top[c] * e + (spur * L.amp + fine * 5) * Math.sin(Math.PI * Math.min(1, v * 1.02)) ** 0.8 * smooth(0, 0.18, v);
     }
-    const at = (c, r) => hg[clamp(r, 0, rows) * (cols + 1) + clamp(c, 0, cols)];
-    const MID = hex(L.mid), LIT = hex(L.lit), SH = hex(L.sh);
+    erode(h, W2, H2, L.seed * 7 + 1, L.drops);
+    // keep the silhouette: rescale every column (smoothed) so that its highest point sits on the ridge line
+    const mx = Array.from({ length: W2 }, (_, c) => { let m = 1; for (let r = 0; r <= rows; r++) m = Math.max(m, h[r * W2 + c]); return Math.max(8, top[c]) / m; });
+    const sc = mx.map((_, c) => { let a = 0, n = 0; for (let k = -3; k <= 3; k++) { const q = mx[clamp(c + k, 0, cols)]; a += q; n++; } return a / n; });
+    const pos = [], col = [], idx = [], MID = hex(L.mid), LIT = hex(L.lit), SH = hex(L.sh);
+    const H0 = (c, r) => h[clamp(r, 0, rows) * W2 + clamp(c, 0, cols)] * sc[clamp(c, 0, cols)], dX = 1300 / cols, dD = L.depth / rows;
+    const lum = new Float64Array(W2 * H2); let sum = 0, cnt = 0;
+    for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++) { // light: low afterglow from the left, soft sky from above
+      const gx = (H0(c + 1, r) - H0(c - 1, r)) / (2 * dX), gd = (H0(c, r + 1) - H0(c, r - 1)) / (2 * dD), l = Math.hypot(gx, gd, 1), k = (gx * 0.86 - gd * 0.12 + 0.32) / l, conc = (H0(c - 4, r) + H0(c + 4, r) + H0(c, r - 4) + H0(c, r + 4)) / 4 - H0(c, r);
+      lum[r * W2 + c] = k * 0.95 - clamp(conc * 0.11, -0.2, 0.28); sum += lum[r * W2 + c]; cnt++;
+    }
+    const mean = sum / cnt;
     for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++) {
-      const [px, py, v, g] = at(c, r), gx = (at(c + 1, r)[3] - at(c - 1, r)[3]) / 2, gy = (at(c, r + 1)[3] - at(c, r - 1)[3]) / 2;
-      const lam = clamp(0.42 - gx * 22 + gy * 13 + (g - 0.6) * 0.9);
-      let k = lam > 0.5 ? mix3(MID, LIT, (lam - 0.5) * 1.7) : mix3(MID, SH, (0.5 - lam) * 1.7);
-      k = mix3(k, hex('#633c80'), smooth(0.7, 1, v) * 0.35); k = mix3(k, hex('#7c4468'), smooth(0.36, 0.2, v) * 0.9); k = mix3(k, hex('#7a4484'), L.haze);
-      const st = fbm(px * 0.009, py * 0.5, 4); k = mix3(k, st > 0.5 ? hex('#93506f') : hex('#5b3069'), smooth(0.3, 0.16, v) * clamp(Math.abs(st - 0.5) * 4.5) * 0.75); k = mix3(k, hex('#5c3068'), smooth(0.1, 0.02, v) * 0.7);
-      col.push(...lin(k.map((q) => q * (0.95 + 0.1 * vnoise(px * 0.9, py * 0.9)))));
+      const px = X(c), v = r / rows, z = H0(c, r), py = mix(L.base + 34, L.base, smooth(0, 0.16, v)) - z; pos.push(...unproj(px, py, mix(L.z0, L.z1, v)));
+      const lam = clamp(0.47 + (lum[r * W2 + c] - mean) * 0.78);
+      let k = lam > 0.5 ? mix3(MID, LIT, (lam - 0.5) * 1.9) : mix3(MID, SH, (0.5 - lam) * 1.9);
+      k = mix3(k, hex('#653d80'), smooth(0.75, 1, v) * 0.22); k = k.map((q) => q * (1 - mix(L.dark[0], L.dark[1], smooth(380, 620, px))));
+      const st = fbm(px * 0.007, py * 0.55, 4), pl = ramp(PLAIN, py).map((q) => q * (1 + (st - 0.5) * 0.42));
+      k = mix3(k, pl, smooth(676, 699, py + (fbm(px * 0.02, 3, 3) - 0.5) * 12));
+      col.push(...lin(k.map((q) => q * (0.97 + 0.06 * vnoise(px * 0.9, py * 0.9)))));
     }
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const a = r * (cols + 1) + c; idx.push(a, a + 1, a + cols + 1, a + 1, a + cols + 2, a + cols + 1); }
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const a = r * W2 + c; idx.push(a, a + 1, a + W2, a + 1, a + W2 + 1, a + W2); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
   });
 }

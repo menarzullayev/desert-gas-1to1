@@ -6,9 +6,10 @@ export const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.8, metal
 export const glow = (h, i) => std({ color: 0x000000, emissive: C(h), emissiveIntensity: i, roughness: 1 });
 export const pane = (t, i = 1) => std({ color: 0x000000, emissive: C('#ffffff'), emissiveMap: t, emissiveIntensity: i, roughness: 0.25 });
 // Textures are drawn by code on a canvas; no image files are used.
+export const TK = 3;
 export function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+  const c = document.createElement('canvas'); c.width = w * TK; c.height = h * TK; const x = c.getContext('2d'); x.scale(TK, TK); draw(x, w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t;
 }
 export function quad(p) { // tl, tr, br, bl
   const g = new THREE.BufferGeometry();
