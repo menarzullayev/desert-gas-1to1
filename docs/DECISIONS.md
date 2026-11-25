@@ -15,3 +15,16 @@ Blender usuli JS generatori yaratgan geometriyani o'qiydi, material, nur, kamera
 
 11. G'olib: Blender Cycles.
 12. Yakuniy render: 64 namuna, 4 sakrash, GPU denoise (256 namunaga nisbatan PSNR 42,4 dB).
+
+# Zoom va 4K qarorlari (2026-11-25)
+
+Boshlanish: foydalanuvchi aytganda.
+
+1. Hozir artifact o'zgarmaydi; zoom va yuqori sifat tunda birga chiqadi.
+2. Sifat: 2160x3840 60 fps lokal master, sahifada 1080p video, pauzada 4K WebP kadrlar.
+3. Render oldidan: neon tom, furgon, tekislik, pushti devor rangi; tog' relyefi; furgon, kolonka, vitrina va vyveska detali.
+4. Boshqaruv: g'ildirak, ikki marta bosish, pinch, + / - / Reset. 1x da sudrash kamerani, zoomda kadrni suradi.
+5. Eng katta zoom: 6x, video o'ynayveradi.
+6. Nashr: mezon o'tsa artifact shu havolada yangilanadi va repo push qilinadi; o'tmasa eski versiya qoladi.
+
+Chegaralar: artifact'da bitta binar fayl 15 MB, bir yuborishda 64 MB.
