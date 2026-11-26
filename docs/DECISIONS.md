@@ -28,3 +28,5 @@ Boshlanish: foydalanuvchi aytganda.
 6. Nashr: mezon o'tsa artifact shu havolada yangilanadi va repo push qilinadi; o'tmasa eski versiya qoladi.
 
 Chegaralar: artifact'da bitta binar fayl 15 MB, bir yuborishda 64 MB.
+
+7. Bajarildi 2026-11-26: 4K render 64 namuna (11,3 s/kadr), WebP q90 har 15-kadr, ΔE 5,1. Eski artifact serverda topilmadi, yangi havola: https://claude.ai/artifact/WiNyjYSTkq3ggvgZ9aRdes

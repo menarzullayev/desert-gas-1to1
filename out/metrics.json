@@ -1,29 +1,29 @@
 {
- "out/4_blender.png": {
-  "meanDE": 5.8,
-  "ssim": 0.596,
+ "out/raw/f300_4k.png": {
+  "meanDE": 5.1,
+  "ssim": 0.582,
   "zones": {
    "sky_top": 2.7,
    "sky_mid": 2.7,
    "sky_low": 2.7,
    "glow_left": 5.0,
-   "mountain_L": 1.4,
-   "mountain_R": 2.9,
-   "plain": 10.3,
-   "sage": 5.2,
-   "lot": 3.2,
-   "gravel_mid": 5.9,
-   "gravel_low": 5.2,
-   "front_bush": 5.8,
-   "fascia": 12.7,
-   "pink_wall": 8.4,
-   "window": 7.4,
-   "shop_blue": 3.6,
-   "van_side": 10.4,
-   "van_front": 10.3,
-   "sign": 6.8,
-   "apron": 5.1,
-   "bush_left": 4.2
+   "mountain_L": 0.6,
+   "mountain_R": 4.4,
+   "plain": 1.1,
+   "sage": 5.1,
+   "lot": 3.7,
+   "gravel_mid": 6.7,
+   "gravel_low": 5.5,
+   "front_bush": 5.2,
+   "fascia": 6.6,
+   "pink_wall": 5.2,
+   "window": 11.0,
+   "shop_blue": 5.1,
+   "van_side": 6.6,
+   "van_front": 10.8,
+   "sign": 6.4,
+   "apron": 5.6,
+   "bush_left": 4.4
   }
  }
 }

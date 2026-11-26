@@ -1,5 +1,6 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>Desert Gas</title>
+<link rel="artifact-thumbnail" href="thumb.jpg">
 <style>
 /* Layout: one portrait film frame, title above, transport below; the dusk palette of the film is the page. Single dark look. */
 :root { --dusk: #170d20; --well: #2a1636; --ink: #fbe9ee; --mute: #c3a3b8; --line: #4a2f54; --neon: #74e2f2; --display: "Trebuchet MS", "Segoe UI", sans-serif; --body: system-ui, "Segoe UI", sans-serif; color-scheme: dark; }
@@ -8,9 +9,18 @@ html, body { height: 100%; }
 body { margin: 0; background: var(--dusk); color: var(--ink); font: 16px/1.4 var(--body); display: grid; grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr); gap: 14px; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 h1 { font: 700 1.5rem/1.1 var(--display); letter-spacing: -.02em; margin: 0; text-align: center; }
 main { display: grid; place-items: center; min-height: 0; min-width: 0; }
-#view { height: 100%; max-width: 100%; aspect-ratio: 9/16; border-radius: 14px; overflow: hidden; background: var(--well); cursor: ew-resize; touch-action: pan-y; user-select: none; }
+#view { position: relative; height: 100%; max-width: 100%; aspect-ratio: 9/16; border-radius: 14px; overflow: hidden; background: var(--well); cursor: ew-resize; touch-action: none; user-select: none; }
 #view.auto { cursor: grab; }
-video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+#view.zoomed { cursor: move; }
+#layer { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+#layer video, #layer img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+#still { opacity: 0; transition: opacity 160ms cubic-bezier(.22, 1, .36, 1); }
+#still.on { opacity: 1; }
+#zoomui { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; align-items: center; }
+#zoomui button { min-width: 0; width: 40px; height: 40px; padding: 0; border-radius: 10px; background: #170d20cc; font-size: 1.25rem; line-height: 1; }
+#zoomui #zreset { width: auto; padding: 0 12px; font-size: .875rem; }
+#zlevel { font-size: .875rem; font-variant-numeric: tabular-nums; background: #170d20cc; border-radius: 8px; padding: 4px 8px; color: var(--ink); }
+#hd { position: absolute; left: 10px; top: 10px; font-size: .8125rem; background: #170d20cc; border-radius: 8px; padding: 3px 9px; color: var(--mute); }
 .bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center; }
 label { display: flex; gap: 10px; align-items: center; color: var(--mute); min-width: 0; }
 input[type=range] { width: min(360px, 44vw); min-width: 0; height: 32px; accent-color: var(--neon); }
@@ -18,10 +28,14 @@ button { font: inherit; color: var(--ink); background: none; border: 1px solid v
 button:hover { border-color: var(--neon); }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
 output { font-variant-numeric: tabular-nums; min-width: 3.4em; }
-@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { button, #still { transition: none; } }
 </style>
 <h1>Desert Gas</h1>
-<main><div id="view" class="auto"><video id="film" src="scrub.mp4" poster="poster.jpg" muted playsinline preload="auto" aria-label="A dusk desert gas station with a parked van, filmed by a slowly sliding camera"></video></div></main>
+<main><div id="view" class="auto">
+  <div id="layer"><video id="film" src="scrub.mp4" poster="poster.jpg" muted playsinline preload="auto" aria-label="A dusk desert gas station with a parked van, filmed by a slowly sliding camera"></video><img id="still" alt=""></div>
+  <span id="hd" hidden>4K frame</span>
+  <div id="zoomui"><span id="zlevel">1×</span><button id="zout" type="button" aria-label="Zoom out">−</button><button id="zin" type="button" aria-label="Zoom in">+</button><button id="zreset" type="button">Reset</button></div>
+</div></main>
 <div class="bar">
   <button id="play" type="button">Pause</button>
   <button id="sound" type="button" aria-pressed="false">Sound on</button>
@@ -29,28 +43,59 @@ output { font-variant-numeric: tabular-nums; min-width: 3.4em; }
 </div>
 <audio id="music" src="music.mp3" loop preload="auto"></audio>
 <script>
-const $ = (i) => document.getElementById(i), film = $('film'), music = $('music'), cam = $('camera'), view = $('view');
-let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, sound = false, want = null;
-const len = () => (film.duration || 11) - 1 / 60;
-function ui() { $('play').textContent = playing ? 'Pause' : 'Play'; view.classList.toggle('auto', playing); }
+const $ = (i) => document.getElementById(i), film = $('film'), music = $('music'), cam = $('camera'), view = $('view'), layer = $('layer'), still = $('still');
+const FPS = 60, FRAMES = 660, STEP = 15, ZMAX = 6; // 4K stills exist every STEP frames
+let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, sound = false, want = null, z = 1, tx = 0, ty = 0, stillKey = -1;
+const len = () => (film.duration || FRAMES / FPS) - 1 / FPS;
+function ui() { $('play').textContent = playing ? 'Pause' : 'Play'; view.classList.toggle('auto', playing && z === 1); view.classList.toggle('zoomed', z > 1); }
+// ---- zoom ----
+function clampPan() { const w = view.clientWidth, h = view.clientHeight; tx = Math.min(0, Math.max(w - w * z, tx)); ty = Math.min(0, Math.max(h - h * z, ty)); }
+function apply() { clampPan(); layer.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`; $('zlevel').textContent = (Math.round(z * 10) / 10) + '×'; ui(); hiRes(); }
+function zoomAt(nz, cx, cy) { nz = Math.min(ZMAX, Math.max(1, nz)); const k = nz / z; tx = cx - (cx - tx) * k; ty = cy - (cy - ty) * k; z = nz; if (z < 1.01) { z = 1; tx = ty = 0; } apply(); }
+const centre = () => [view.clientWidth / 2, view.clientHeight / 2];
+$('zin').onclick = () => zoomAt(z * 1.5, ...centre()); $('zout').onclick = () => zoomAt(z / 1.5, ...centre()); $('zreset').onclick = () => zoomAt(1, 0, 0);
+for (const b of ['zin', 'zout', 'zreset']) $(b).addEventListener('pointerdown', (e) => e.stopPropagation());
+view.addEventListener('wheel', (e) => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(z * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+view.addEventListener('dblclick', (e) => { const r = view.getBoundingClientRect(); zoomAt(z > 1.5 ? 1 : 3, e.clientX - r.left, e.clientY - r.top); });
+window.addEventListener('resize', apply);
+// A sharp 4K still replaces the 1080p video while it is paused and zoomed; the film is moved to the still's own frame.
+function hiRes() {
+  const show = !playing && z > 1.15 && film.duration && !film.seeking;
+  if (!show) { still.classList.remove('on'); $('hd').hidden = true; return; }
+  const f = Math.min(FRAMES - 1, Math.round((film.currentTime * FPS) / STEP) * STEP);
+  if (f !== stillKey) { stillKey = f; still.classList.remove('on'); $('hd').hidden = true; const t = f / FPS; if (Math.abs(film.currentTime - t) > 0.004) { film.currentTime = t; syncUi(t); } still.onload = () => { if (stillKey === f && !playing && z > 1.15) { still.classList.add('on'); $('hd').hidden = false; } }; still.src = 'k/f' + String(f).padStart(4, '0') + '.webp'; }
+  else if (still.complete && still.naturalWidth) { still.classList.add('on'); $('hd').hidden = false; }
+}
+// ---- playback ----
+function syncUi(t) { cam.value = t / len(); $('time').textContent = t.toFixed(1) + ' s'; }
 function pump() { if (want === null || film.seeking) return; const p = want; want = null; film.currentTime = p * len(); }
-function seek(p) { p = Math.min(1, Math.max(0, p)); cam.value = p; $('time').textContent = (p * len()).toFixed(1) + ' s'; want = p; pump(); }
+function seek(p) { p = Math.min(1, Math.max(0, p)); cam.value = p; $('time').textContent = (p * len()).toFixed(1) + ' s'; want = p; still.classList.remove('on'); pump(); }
 function syncMusic() { if (sound && playing) { try { music.currentTime = film.currentTime; } catch (e) {} music.play().catch(() => {}); } else music.pause(); }
-function go(on) { playing = on; ui(); if (on) { want = null; if (film.currentTime > len() - 0.05) film.currentTime = 0; film.play().catch(() => { playing = false; ui(); music.pause(); }); } else film.pause(); syncMusic(); }
-film.addEventListener('seeked', pump);
+function go(on) { playing = on; ui(); if (on) { want = null; still.classList.remove('on'); $('hd').hidden = true; if (film.currentTime > len() - 0.05) film.currentTime = 0; film.play().catch(() => { playing = false; ui(); music.pause(); }); } else { film.pause(); } syncMusic(); hiRes(); }
+let settle = 0;
+film.addEventListener('seeked', () => { pump(); clearTimeout(settle); settle = setTimeout(hiRes, 140); });
 film.addEventListener('ended', () => { film.currentTime = 0; go(true); });
-(function tick() { if (playing && film.duration && !film.paused) { cam.value = film.currentTime / len(); $('time').textContent = film.currentTime.toFixed(1) + ' s'; } requestAnimationFrame(tick); })();
-cam.addEventListener('input', () => { const p = +cam.value; if (playing) go(false); seek(p); });
+(function tick() { if (playing && film.duration && !film.paused) syncUi(film.currentTime); requestAnimationFrame(tick); })();
+cam.addEventListener('input', () => { const p = +cam.value; if (playing) go(false); stillKey = -1; seek(p); });
 $('play').onclick = () => go(!playing);
 $('sound').onclick = () => { sound = !sound; $('sound').setAttribute('aria-pressed', sound); $('sound').textContent = sound ? 'Sound off' : 'Sound on'; syncMusic(); };
-let x0 = null, p0 = 0;
-view.addEventListener('pointerdown', (e) => { if (playing) go(false); x0 = e.clientX; p0 = film.currentTime / len(); view.setPointerCapture(e.pointerId); });
-view.addEventListener('pointermove', (e) => { if (x0 !== null) seek(p0 + (e.clientX - x0) / view.clientWidth); });
-for (const t of ['pointerup', 'pointercancel']) view.addEventListener(t, () => (x0 = null));
-ui();
+// ---- pointers: 1x drag moves the camera, zoomed drag pans, two fingers pinch ----
+const pts = new Map(); let drag = null, pinch = null;
+view.addEventListener('pointerdown', (e) => {
+  view.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pts.size === 2) { const [a, b] = [...pts.values()], r = view.getBoundingClientRect(); pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z, cx: (a[0] + b[0]) / 2 - r.left, cy: (a[1] + b[1]) / 2 - r.top, tx, ty }; drag = null; return; }
+  if (z > 1) drag = { mode: 'pan', x: e.clientX, y: e.clientY, tx, ty }; else { if (playing) go(false); stillKey = -1; drag = { mode: 'cam', x: e.clientX, p: film.currentTime / len() }; }
+});
+view.addEventListener('pointermove', (e) => {
+  if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pinch && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), nz = Math.min(ZMAX, Math.max(1, pinch.z * d / pinch.d)), k = nz / pinch.z; z = nz; tx = pinch.cx - (pinch.cx - pinch.tx) * k; ty = pinch.cy - (pinch.cy - pinch.ty) * k; if (z < 1.01) { z = 1; tx = ty = 0; } apply(); return; }
+  if (!drag) return; if (drag.mode === 'pan') { tx = drag.tx + e.clientX - drag.x; ty = drag.ty + e.clientY - drag.y; apply(); } else seek(drag.p + (e.clientX - drag.x) / view.clientWidth);
+});
+for (const t of ['pointerup', 'pointercancel']) view.addEventListener(t, (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) drag = null; });
+apply();
 async function boot() { // a host without byte ranges cannot seek, so fall back to an in-memory copy
   if (!film.seekable.length || film.seekable.end(0) < 1) try { film.src = URL.createObjectURL(await (await fetch('scrub.mp4')).blob()); await new Promise((r) => film.addEventListener('loadeddata', r, { once: true })); } catch (e) {}
-  if (playing) go(true);
+  if (playing) go(true); else hiRes();
 }
 film.readyState >= 2 ? boot() : film.addEventListener('loadeddata', boot, { once: true });
 </script>

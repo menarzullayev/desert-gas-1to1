@@ -15,9 +15,9 @@ Times measured on an RTX 2080 Ti at 1080x1920 (method 1 at 1440x2560). Methods 1
 
 ## Final animation (method 4)
 
-`out/desert-gas.mp4`: 1080x1920, 60 fps, 660 frames, 64 samples with OptiX and GPU denoising (about 2.7 s per frame), with an original soundtrack synthesised by `tools/music.py`. `web/` is a small page with a camera slider; run `node tools/serve.mjs` and open http://localhost:8123.
+Rendered at 2160x3840, 60 fps, 660 frames, 64 samples with OptiX and GPU denoising (about 11.3 s per frame, 2 h 4 min in total). `out/desert-gas.mp4` is the 1080x1920 version with an original soundtrack synthesised by `tools/music.py`; the 4K master stays local. `web/` is the viewer: camera slider and up to 6x zoom, with a 4K still (every 15th frame) swapped in while paused. Run `node tools/serve.mjs` and open http://localhost:8123.
 
-Measured on frame 150 against the private reference: mean zone colour error 5.8 dE (single zones up to 12.7), rigid objects placed within 0.14 to 0.71 % of the frame width. Plants are procedural and do not match blade by blade.
+Measured on frame 150 against the private reference: mean zone colour error 5.1 dE (the shop window is still the largest single error), rigid objects placed within 0.14 to 0.57 % of the frame width. Mountains are a heightfield carved by a droplet erosion simulation. Plants are procedural and do not match blade by blade.
 
 ## Reference
 
@@ -32,8 +32,8 @@ SPP=1200 node tools/shot.mjs pathtrace out/2_pathtrace.png 150 1.5 590
 ANGLE=gl node tools/shot.mjs shader out/3_shader.png 150 1.5
 mkdir -p out/raw/mesh && node tools/shot.mjs exportmesh out/raw/mesh
 blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh out/still.png 150 256 150
-BOUNCES=4 ANIM=0-659 blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh <frames dir> 150 64 150
-python tools/music.py out/raw/music.wav && FRAMES=<frames dir> sh tools/finish.sh
+BOUNCES=4 ANIM=0-659 blender -b --factory-startup -P src/blender_scene.py -- out/raw/mesh <4K frames dir> 150 64 300
+python tools/music.py out/raw/music.wav && FRAMES=<4K frames dir> sh tools/finish4k.sh && sh tools/build-page.sh
 ```
 
 `tools/shot.mjs` expects Chrome at its default Windows path. Blender 4.5 LTS was used.
