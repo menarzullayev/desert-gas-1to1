@@ -1,7 +1,7 @@
 #!/bin/sh
 # 4K master, 1080p page video, 4K WebP stills every 15 frames, poster. FRAMES=<4K frame dir>
 set -e
-FR=${FRAMES:-E:/desert-gas-4k-v3}
+FR=${FRAMES:-E:/media/desert-gas/desert-gas-4k-v3}
 ffmpeg -v error -y -i out/raw/music.wav -af "loudnorm=I=-16:TP=-1.5" -ar 48000 -c:a libmp3lame -b:a 192k web/music.mp3
 ffmpeg -v error -y -framerate 60 -i $FR/f%04d.png -i web/music.mp3 -map 0:v -map 1:a -vf "noise=alls=2:allf=t,format=yuv420p" -c:v libx264 -preset slow -crf 16 -color_primaries bt709 -color_trc bt709 -colorspace bt709 -c:a aac -b:a 192k -t 11 -movflags +faststart out/desert-gas-4k.mp4
 ffmpeg -v error -y -framerate 60 -i $FR/f%04d.png -i web/music.mp3 -map 0:v -map 1:a -vf "scale=1080:1920:flags=lanczos,format=yuv420p" -c:v libx264 -preset slow -crf 15 -color_primaries bt709 -color_trc bt709 -colorspace bt709 -c:a aac -b:a 192k -t 11 -movflags +faststart out/desert-gas.mp4
